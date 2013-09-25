@@ -8,6 +8,7 @@ namespace shvetsgroup\ParallelRunner\Console\Command;
 
 use Behat\Behat\Console\Command\BehatCommand, Behat\Behat\Event\SuiteEvent;
 
+use shvetsgroup\ParallelRunner\Worker;
 use Symfony\Component\DependencyInjection\ContainerInterface, Symfony\Component\Console\Input\InputOption,
   Symfony\Component\Console\Input\InputInterface, Symfony\Component\Console\Output\OutputInterface,
   Symfony\Component\Process\Process;
@@ -186,6 +187,9 @@ class ParallelRunnerCommand extends BehatCommand
      */
     protected function runWorker()
     {
+        $worker = new Worker($this->workerID);
+        $this->getContainer()->get('behat.parallel_runner.context.initializer')->setWorker($worker);
+
         $this->registerWorkerSignal();
 
         // We don't need any formatters, but event recorder for worker process.

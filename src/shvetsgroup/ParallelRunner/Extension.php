@@ -44,6 +44,14 @@ class Extension implements ExtensionInterface
 
         $container->setParameter('parallel.process_count', $config['process_count']);
         $container->setParameter('parallel.profiles', $config['profiles']);
+
+        $container
+            ->register(
+                'behat.parallel_runner.context.initializer',
+                '\shvetsgroup\ParallelRunner\Context\Initializer\WorkerAwareInitializer'
+            )
+            ->addTag('behat.context.initializer')
+        ;
     }
 
     /**
