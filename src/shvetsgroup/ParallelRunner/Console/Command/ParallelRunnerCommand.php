@@ -8,6 +8,7 @@ namespace shvetsgroup\ParallelRunner\Console\Command;
 
 use Behat\Behat\Console\Command\BehatCommand, Behat\Behat\Event\SuiteEvent;
 
+use Behat\Behat\Event\StepEvent;
 use Symfony\Component\DependencyInjection\ContainerInterface, Symfony\Component\Console\Input\InputOption,
   Symfony\Component\Console\Input\InputInterface, Symfony\Component\Console\Output\OutputInterface,
   Symfony\Component\Process\Process;
@@ -135,6 +136,10 @@ class ParallelRunnerCommand extends BehatCommand
             $final_command = implode(' ', $command);
             $this->processes[$i] = new Process($final_command);
             $this->processes[$i]->start();
+            $exitCode = $this->processes[$i]->wait(function($type, $buffer) {
+                    var_dump($type, $buffer);
+            });
+            var_dump($exitCode);
         }
     }
 
@@ -210,7 +215,12 @@ class ParallelRunnerCommand extends BehatCommand
                     file_put_contents($output_file, serialize($events));
                     $eventService->flushEvents();
                 } catch (\Exception $e) {
-                    $this->exceptionHandler($e);
+                    $events = $eventService->getEvents();
+                    $lastEvent = null;
+                    if (count($events) > 0) {
+                        $lastEvent = $events[count($events) - 1];
+                    }
+                    $this->exceptionHandler($lastEvent, $e);
                 }
             }
         }
@@ -307,10 +317,16 @@ class ParallelRunnerCommand extends BehatCommand
     /**
      * Creates a special file in test directory, which contains an exception message.
      */
-    function exceptionHandler($exception)
+    function exceptionHandler($event, $exception)
     {
+        $eventText = '';
+        if ($event && $event[1] instanceof StepEvent) {
+            $step = $event[1]->getStep();
+            $stepFile = $step->getFile();
+            $eventText = $stepFile . ':' .$step->getLine();
+        }
         $output_file = $this->getTestDir() . '/results/' . $this->workerID . '.exception';
-        file_put_contents($output_file, "Worker exception (workerID={$this->workerID}): " . $exception->getMessage());
+        file_put_contents($output_file, "Worker exception (workerID={$this->workerID}): " . $exception->getMessage() . " " . $exception->getTraceAsString(). " " . $eventText);
     }
 
     /**
