@@ -144,7 +144,9 @@ class ParallelRunnerCommand extends BehatCommand
             }
             $final_command = implode(' ', $command);
             $this->processes[$i] = new Process($final_command);
+            $this->processes[$i]->setTimeout(null);
             $this->processes[$i]->start();
+
             $exitCode = $this->processes[$i]->wait(function($type, $buffer) {
                     var_dump($type, $buffer);
             });
